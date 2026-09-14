@@ -56,6 +56,9 @@ jobs:
 
   nix-flake:
     if: (github.event_name == 'push' || github.event.pull_request.draft == false)
+    permissions:
+      id-token: write
+      contents: read
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
@@ -65,13 +68,8 @@ jobs:
     - name: Set NIX_FIRST_BUILD_UID (macOS only)
       if: runner.os == 'macOS'
       run: echo "NIX_FIRST_BUILD_UID=400" >> $GITHUB_ENV
-    - uses: cachix/install-nix-action@v27
-      with:
-        nix_path: nixpkgs=channel:nixos-unstable
-    - uses: cachix/cachix-action@v15
-      with:
-        name: xs
-        authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
+    - uses: DeterminateSystems/determinate-nix-action@v3
+    - uses: DeterminateSystems/flakehub-cache-action@v3.22.3
     - name: Flake check
       run: nix run . -- --version
     - name: Test default dev shell
