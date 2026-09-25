@@ -72,6 +72,28 @@ jobs:
       with:
         name: xs
         authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
+    - name: Measure fresh and cached Nix build times
+      if: runner.os == 'Linux'
+      shell: bash
+      run: |
+        start=$SECONDS
+        nix build --no-link .#default
+        fresh_build_seconds=$((SECONDS - start))
+
+        start=$SECONDS
+        nix build --no-link .#default
+        cached_build_seconds=$((SECONDS - start))
+
+        {
+          echo '## Nix build timing'
+          echo
+          echo '| Build | Duration |'
+          echo '| --- | ---: |'
+          echo "| Fresh runner build | ${fresh_build_seconds}s |"
+          echo "| Cached build (same runner) | ${cached_build_seconds}s |"
+        } >> "$GITHUB_STEP_SUMMARY"
+
+        echo "::notice title=Nix build timing::Fresh build: ${fresh_build_seconds}s; cached build: ${cached_build_seconds}s"
     - name: Flake check
       run: nix run . -- --version
     - name: Test default dev shell
